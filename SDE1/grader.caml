@@ -1,0 +1,20 @@
+(** to test both given and new functions *)
+#use"sde1_sp2020_given_functions.caml";; (* we supply this *)
+#use"sde1_sp2020.caml";; (* you supply this *)
+
+(**Test Script*)
+
+let os1 = [1.;-1.;1.;-1.];;
+let os2 = [-1.;-1.;1.;-1.];;
+let os3 = [-1.;-1.;1.;1.];;
+let os4 = [-1.;-1.;1.;-1.;1.];;
+
+
+let w1 = hopTrain([os1]);;
+let w2 = hopTrain([os2]);;
+let w3 = hopTrain([os3]);;
+
+
+
+nextState(os2,w2);;
+let a1 = [-1.;-1.;1.;-1.];;

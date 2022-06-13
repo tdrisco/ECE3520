@@ -1,0 +1,32 @@
+(** to test both given and new functions *)
+#use"sde1_sp2020_given_functions.caml";; (* we supply this *)
+#use"sde1_sp2020.caml";; (* you supply this *)
+
+(**Test Script*)
+
+let os1 = [1.;-1.;1.;-1.];;
+let os2 = [-1.;-1.;1.;-1.];;
+let os3 = [-1.;-1.;1.;1.];;
+let os4 = [-1.;-1.;1.;-1.;1.];;
+
+let w1 = hopTrain([os1]);;
+let w2 = hopTrain([os2]);;
+let w3 = hopTrain([os3]);;
+
+nextState(os2,w2);;
+nextState(os3,w3);;
+
+updateN([-1.;-1.;-1.],[[0.0;-1.0;-1.0];[-1.0;0.0;-1.0];[-1.0;-1.0;0.0]],3);;
+updateN(os3,w3,3);;
+
+findsEquilibrium(os1,w1,5);;
+findsEquilibrium([-1.;-1.;-1.],[[0.0;-1.0;-1.0];[-1.0;0.0;-1.0];[-1.0;-1.0;0.0]],3);;
+
+energy(os2,w2);;
+energy([-1.;-1.;-1.],[[0.0;-1.0;-1.0];[-1.0;0.0;-1.0];[-1.0;-1.0;0.0]]);;
+
+hopTrainAState(os4);;
+hopTrainAState([-1.;-1.;-1.]);;
+
+hopTrain([os1;os3]);;
+hopTrain([[-1.;-1.;-1.]]);;

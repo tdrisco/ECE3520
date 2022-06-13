@@ -1,0 +1,133 @@
+(** val nextState : float list * float list list -> float list = <fun>
+    Next state returns the computed next network state as a float list given;
+    the inputs of the current state (float list) and the weight matrix;
+    (float list list). This function implements both the provided netAll and;
+    hop11ActAll functions. *)
+
+let nextState = function (currentState, weightMatrix) ->
+  hop11ActAll(netAll(currentState,weightMatrix),currentState);;
+
+
+(** val updateN : float list * float list list * int -> float list = <fun>;
+    Returns the network state as a float list after it has been updated from;
+    the current state a given n number of times (integer input). This function;
+    implements the nextState function and recursivly calls itself. *)
+
+let rec updateN = function (currentState, weightMatrix, n) ->
+  if (n <= 0) then currentState
+  else
+    updateN(nextState(currentState,weightMatrix),weightMatrix,n-1);;
+
+(** val findsEquilibrium : float list * float list list * int -> bool = <fun>;
+    Returns a boolean true or false representing wether the network reached an;
+    equilibrium state within a given number of steps. This function excepts;
+    the intial state (float list), weightMatrix (float list list) and range;
+    (integer) as inputs. The nextState function is implemeted to determine the;
+    next state and check if it is same as the previous state. The function is;
+    recursivly called to check for equilibrium within a range number of steps.*)
+
+let rec findsEquilibrium = function (initialState, weightMatrix, range) ->
+  if (range <= 0) then false
+  else if (initialState = nextState(initialState,weightMatrix)) then true
+  else
+    findsEquilibrium(nextState(initialState,weightMatrix),weightMatrix,range-1);;
+
+
+(** val auxMatrixMulti : float list * float list list -> float list = <fun>;
+    This a simple helper function that excepts a state (float list) and a;
+    weightMatrix (float list list) and perfroms matrix multiplication of a;
+    vector and a matrix. It implements the given inner function and recursivly;
+    calls itself to perfrom the the arithmatic.*)
+
+let rec auxMatrixMulti = function (state, weightMatrix) ->
+  if weightMatrix == [] then []
+  else
+    inner(state,(List.hd weightMatrix)) :: auxMatrixMulti(state,(List.tl weightMatrix));;
+
+(** val energy : float list * float list list -> float = <fun>;
+    Returns and integer value representing the energy by implemeting the;
+    auxMatrixMulti function and the given inner function to multiple the;
+    transpose of the state by the weightMatrix. This value was then multiplied;
+    by -1/2 to calculate the energy.*)
+
+let energy = function (state, weightMatrix) ->
+  -0.5 *. inner(auxMatrixMulti(state, weightMatrix),state);;
+
+(** val auxScalarbyVec : float * float list * int * int -> float list = <fun>;
+    This is another simple helper function used to multiply a scalar into a;
+    vector input. It was also modified to suite the hopfield network function;
+    and set the diagnol values of a matrix to 0. This was done in accordance;
+    with equations four and five.*)
+
+let rec auxScalarbyVec = function (scalar, vector, position, runNum) ->
+  if (vector == []) then []
+  else if (position = runNum) then 0. :: auxScalarbyVec(scalar,(List.tl vector),position+1,runNum)
+  else ((List.hd vector)*.scalar) :: auxScalarbyVec(scalar,(List.tl vector),position+1,runNum);;
+
+(** val auxOuter : float list * float list * int -> float list list = <fun>;
+    A helper function that used to mulitply each individual element in a;
+    vector by every element in another vector. This will result in the;
+    function returning. The function also keeps track of the position of;
+    the element being multiplied through (runNum) to suite the hopfield design;
+    and aid the use of the auxScalarbyVec function.*)
+
+let rec auxOuter = function (state1, state2, runNum) ->
+  if (state1 == []) then []
+  else (auxScalarbyVec((List.hd state1),state2,0,runNum)) :: auxOuter((List.tl state1),state2,runNum +1);;
+
+(** val hopTrainAState : float list -> float list list = <fun>;
+    Returns a float list list which represents the weight matrix for a given;
+    single state input. This function is implemented using the;
+    auxOuter function.*)
+
+let hopTrainAState = function (astate) ->
+  auxOuter(astate,astate,0);;
+
+(** val auxAddVec : float list * float list -> float list = <fun>;
+    A helper function that returns a float list representing the element wise;
+    addition of two vectors. Adds the head of the each vector and recursivly;
+    works to move through the entire vector.*)
+
+let rec auxAddVec = function (vec1, vec2) ->
+  if (vec1 == [] && vec2 == []) then []
+  else (List.hd vec1) +. (List.hd vec2) :: auxAddVec((List.tl vec1),(List.tl vec2));;
+
+(** val auxAddMatrix : float list list * float list list -> float list list = <fun>;
+    A helper function that returns a float list list representing two matrices;
+    that have been added together element by element. This function works by;
+    recursivly calling itself and implementing the auxAddVec fucntion.*)
+
+let rec auxAddMatrix = function (matrix1, matrix2) ->
+if (matrix1 == [] && matrix2 == []) then []
+else (auxAddVec((List.hd matrix1),(List.hd matrix2))) :: auxAddMatrix((List.tl matrix1),(List.tl matrix2));;
+
+(** val auxAddMatrix2 : float list list list -> float list list = <fun>;
+    A helper function that returns a float list list when given a;
+    float list list list as an input. The input represents a vector of matrices;
+    and the function works by implemetning auxAddMatrix to add together all;
+    the matrices in the given vector of matrices.*)
+
+let rec auxAddMatrix2 = function (matrix) ->
+  if (matrix == []) then []
+  else if (List.tl matrix == []) then (List.hd matrix)
+  else if (List.tl(List.tl matrix) == []) then auxAddMatrix2([auxAddMatrix((List.hd matrix), (List.hd(List.tl matrix)))])
+  else auxAddMatrix2(auxAddMatrix((List.hd matrix), (List.hd(List.tl matrix))) :: (List.tl(List.tl matrix)));;
+
+(** val hopTrainAllStates : float list list -> float list list list = <fun>;
+    A simple extension of hopTrainAStates that implements hopTrainAStates on;
+    each float list within a list of float lists. This is one of two functions;
+    that are combined to create the final hopTrain function.*)
+
+let rec hopTrainAllStates = function (allStates) ->
+  if (allStates == []) then []
+  else hopTrainAState(List.hd allStates) :: hopTrainAllStates(List.tl allStates);;
+
+(** val hopTrain : float list list -> float list list = <fun>;
+    Returns the weight matrix given a list of stored states. This function is;
+    implemented using the hopTrainAllStates, which was desccribed above and;
+    the auxAddMatrix2 funciton which was also described above.;
+    hopTrainAllStates is called on the input and then auxAddMatrix2 is called;
+    on the return from hopTrainAllStates.*)
+
+let hopTrain = function(allStates) ->
+auxAddMatrix2(hopTrainAllStates(allStates));;
